@@ -1,7 +1,7 @@
-[![PyPI version](https://img.shields.io/pypi/v/aigov-shield)](https://pypi.org/project/aigov-shield/)
-[![Python versions](https://img.shields.io/pypi/pyversions/aigov-shield)](https://pypi.org/project/aigov-shield/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/garyatwalAI/aigov-shield)
 [![Tests](https://img.shields.io/github/actions/workflow/status/garyatwalAI/aigov-shield/ci.yml?label=tests)](https://github.com/garyatwalAI/aigov-shield/actions)
 [![License](https://img.shields.io/github/license/garyatwalAI/aigov-shield)](https://github.com/garyatwalAI/aigov-shield/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0-green)](https://github.com/garyatwalAI/aigov-shield/releases)
 
 # aigov-shield
 
