@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aigov-shield"
+dynamic = ["version"]
+description = "Production-ready AI governance infrastructure for regulated industries"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+authors = [{name = "Gary Atwal", email = "garyatwal2017@gmail.com"}]
+keywords = ["ai", "governance", "compliance", "nist", "guardrails", "llm", "safety", "audit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+dependencies = []
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.1.0"]
+openai = ["openai>=1.0.0"]
+fastapi = ["fastapi>=0.100.0"]
+sqlite = ["aiosqlite>=0.19.0"]
+reports = ["jinja2>=3.1.0"]
+all = ["aigov-shield[langchain,openai,fastapi,sqlite,reports]"]
+dev = ["pytest>=7.0", "pytest-cov", "pytest-asyncio", "ruff", "mypy", "pre-commit"]
+
+[project.scripts]
+aigov-shield = "aigov_shield.cli.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/garyatwalbirkbeck/aigov-shield"
+Documentation = "https://github.com/garyatwalbirkbeck/aigov-shield/tree/main/docs"
+Repository = "https://github.com/garyatwalbirkbeck/aigov-shield"
+Issues = "https://github.com/garyatwalbirkbeck/aigov-shield/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "aigov_shield._version.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
