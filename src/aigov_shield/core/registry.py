@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from aigov_shield.core.exceptions import RegistryError
 
 
@@ -14,7 +12,7 @@ class ComponentRegistry:
     and registered under a unique name within that category.
     """
 
-    _registries: Dict[str, Dict[str, type]] = {}
+    _registries: dict[str, dict[str, type]] = {}
 
     @classmethod
     def register(cls, category: str, name: str, component: type) -> None:
@@ -44,19 +42,16 @@ class ComponentRegistry:
             RegistryError: If the category or component name is not found.
         """
         if category not in cls._registries:
-            raise RegistryError(
-                f"Unknown component category: '{category}'"
-            )
+            raise RegistryError(f"Unknown component category: '{category}'")
         if name not in cls._registries[category]:
             available = ", ".join(cls._registries[category].keys())
             raise RegistryError(
-                f"Component '{name}' not found in category '{category}'. "
-                f"Available: [{available}]"
+                f"Component '{name}' not found in category '{category}'. Available: [{available}]"
             )
         return cls._registries[category][name]
 
     @classmethod
-    def list_components(cls, category: str) -> List[str]:
+    def list_components(cls, category: str) -> list[str]:
         """List all component names registered under a category.
 
         Args:

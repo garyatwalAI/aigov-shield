@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
-from aigov_shield.measurement.base import EvaluationResult
+if TYPE_CHECKING:
+    from aigov_shield.measurement.base import EvaluationResult
 
 
 class DriftMonitor:
@@ -23,9 +24,9 @@ class DriftMonitor:
 
     def compare(
         self,
-        baseline_results: Dict[str, EvaluationResult],
-        current_results: Dict[str, EvaluationResult],
-    ) -> Dict[str, Any]:
+        baseline_results: dict[str, EvaluationResult],
+        current_results: dict[str, EvaluationResult],
+    ) -> dict[str, Any]:
         """Compare baseline and current evaluation results.
 
         Only metrics present in both *baseline_results* and
@@ -41,8 +42,8 @@ class DriftMonitor:
             A dict with per-metric deltas, alerts for degraded metrics,
             and a status summary.
         """
-        metrics: Dict[str, Dict[str, Any]] = {}
-        alerts: List[str] = []
+        metrics: dict[str, dict[str, Any]] = {}
+        alerts: list[str] = []
         improved_count = 0
         degraded_count = 0
         stable_count = 0

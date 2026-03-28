@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 
@@ -18,7 +18,7 @@ from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 # Keyword patterns by category
 # ---------------------------------------------------------------------------
 
-_TOXICITY_PATTERNS: Dict[str, List[str]] = {
+_TOXICITY_PATTERNS: dict[str, list[str]] = {
     "hate_speech": [
         "kill all",
         "exterminate",
@@ -70,7 +70,7 @@ _TOXICITY_PATTERNS: Dict[str, List[str]] = {
 # Compiled regex patterns for advanced detection
 # ---------------------------------------------------------------------------
 
-_TOXICITY_REGEX: List[Tuple[str, re.Pattern[str]]] = [
+_TOXICITY_REGEX: list[tuple[str, re.Pattern[str]]] = [
     (
         "threats",
         re.compile(
@@ -116,26 +116,26 @@ class ToxicityGuard(BaseGuard):
         self,
         on_violation: GuardAction = GuardAction.BLOCK,
         confidence_threshold: float = 0.5,
-        categories: Optional[List[str]] = None,
-        custom_patterns: Optional[Dict[str, List[str]]] = None,
-        classifier_fn: Optional[Callable[[str], Tuple[bool, float]]] = None,
+        categories: list[str] | None = None,
+        custom_patterns: dict[str, list[str]] | None = None,
+        classifier_fn: Callable[[str], tuple[bool, float]] | None = None,
     ) -> None:
         super().__init__(
             name="toxicity_guard",
             on_violation=on_violation,
             confidence_threshold=confidence_threshold,
         )
-        self.categories: List[str] = (
+        self.categories: list[str] = (
             categories if categories is not None else list(_TOXICITY_PATTERNS.keys())
         )
-        self.custom_patterns: Dict[str, List[str]] = custom_patterns or {}
+        self.custom_patterns: dict[str, list[str]] = custom_patterns or {}
         self.classifier_fn = classifier_fn
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _get_patterns_for_category(self, category: str) -> List[str]:
+    def _get_patterns_for_category(self, category: str) -> list[str]:
         """Return the merged keyword list for *category*.
 
         Args:
@@ -155,7 +155,7 @@ class ToxicityGuard(BaseGuard):
     def check(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> GuardResult:
         """Scan *text* for toxic content and return a ``GuardResult``.
 
@@ -170,7 +170,7 @@ class ToxicityGuard(BaseGuard):
         start_time = time.perf_counter()
         text_lower = text.lower()
 
-        violations: List[Dict[str, Any]] = []
+        violations: list[dict[str, Any]] = []
         keyword_hit_count = 0
         regex_matched = False
         classifier_matched = False

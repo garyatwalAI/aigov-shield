@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 
 @dataclass
@@ -25,8 +25,8 @@ class EvaluationResult:
     score: float
     passed: bool
     threshold: float
-    details: List[Dict[str, Any]] = field(default_factory=list)
-    summary: Dict[str, Any] = field(default_factory=dict)
+    details: list[dict[str, Any]] = field(default_factory=list)
+    summary: dict[str, Any] = field(default_factory=dict)
     nist_function: str = ""
 
 
@@ -41,7 +41,7 @@ class BaseEvaluator(ABC):
         self.threshold = threshold
 
     @abstractmethod
-    def evaluate(self, data: List[Dict[str, str]]) -> EvaluationResult:
+    def evaluate(self, data: list[dict[str, str]]) -> EvaluationResult:
         """Evaluate a dataset of AI outputs against compliance criteria.
 
         Args:

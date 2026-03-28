@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class BaseAuditLogger(ABC):
@@ -14,17 +14,17 @@ class BaseAuditLogger(ABC):
         case_id: Optional case or session identifier.
     """
 
-    def __init__(self, logger_name: str, case_id: Optional[str] = None) -> None:
+    def __init__(self, logger_name: str, case_id: str | None = None) -> None:
         self.logger_name = logger_name
         self.case_id = case_id
 
     @abstractmethod
-    def log(self, event_type: str, data: Dict[str, Any]) -> str:
+    def log(self, event_type: str, data: dict[str, Any]) -> str:
         """Log an event and return its record ID."""
         ...
 
     @abstractmethod
-    def get_record(self, record_id: str) -> Optional[Dict[str, Any]]:
+    def get_record(self, record_id: str) -> dict[str, Any] | None:
         """Retrieve a record by its ID."""
         ...
 

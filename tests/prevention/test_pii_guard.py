@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from aigov_shield.core.types import PIICategory, RedactionMode
 from aigov_shield.prevention import GuardAction, PIIGuard
 
@@ -172,7 +170,6 @@ def test_confidence_scaling(pii_guard):
     """More PII items should produce higher confidence than fewer."""
     result_one = pii_guard.check("Email: user@example.com")
     result_many = pii_guard.check(
-        "Email: user@example.com Phone: 555-123-4567 "
-        "SSN: 123-45-6789 DOB: 01/15/1990"
+        "Email: user@example.com Phone: 555-123-4567 SSN: 123-45-6789 DOB: 01/15/1990"
     )
     assert result_many.confidence >= result_one.confidence

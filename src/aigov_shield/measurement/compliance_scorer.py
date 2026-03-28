@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from aigov_shield.measurement.base import EvaluationResult
 from aigov_shield.measurement.bias_evaluator import BiasEvaluator
 from aigov_shield.measurement.grounding_evaluator import GroundingEvaluator
 from aigov_shield.measurement.pii_evaluator import PIIEvaluator
 from aigov_shield.measurement.privilege_evaluator import PrivilegeEvaluator
+
+if TYPE_CHECKING:
+    from aigov_shield.measurement.base import EvaluationResult
 
 
 class ComplianceScorer:
@@ -47,9 +49,9 @@ class ComplianceScorer:
 
     def evaluate(
         self,
-        data: List[Dict[str, str]],
-        context_column: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        data: list[dict[str, str]],
+        context_column: str | None = None,
+    ) -> dict[str, Any]:
         """Run all evaluators and produce a composite compliance report.
 
         Args:
@@ -73,12 +75,14 @@ class ComplianceScorer:
         bias_result = self._bias_evaluator.evaluate(data)
 
         # --- Prepare grounding data ---
-        grounding_data: List[Dict[str, str]] = []
+        grounding_data: list[dict[str, str]] = []
         for item in data:
-            grounding_data.append({
-                "output": item.get("text", ""),
-                "context": item.get(context_column, ""),
-            })
+            grounding_data.append(
+                {
+                    "output": item.get("text", ""),
+                    "context": item.get(context_column, ""),
+                }
+            )
         grounding_result = self._grounding_evaluator.evaluate(grounding_data)
 
         # --- Composite score ---
@@ -90,7 +94,7 @@ class ComplianceScorer:
         )
 
         # --- NIST function scores ---
-        function_scores: Dict[str, float] = {
+        function_scores: dict[str, float] = {
             "GOVERN": composite_score,
             "MAP": grounding_result.score,
             "MEASURE": (pii_result.score + bias_result.score) / 2.0,
@@ -98,14 +102,16 @@ class ComplianceScorer:
         }
 
         overall_pass = composite_score >= self.pass_threshold
-        per_function_pass: Dict[str, bool] = {
-            fn: score >= self.pass_threshold
-            for fn, score in function_scores.items()
+        per_function_pass: dict[str, bool] = {
+            fn: score >= self.pass_threshold for fn, score in function_scores.items()
         }
 
         # --- Recommendations ---
         recommendations = self._generate_recommendations(
-            pii_result, privilege_result, grounding_result, bias_result,
+            pii_result,
+            privilege_result,
+            grounding_result,
+            bias_result,
         )
 
         return {
@@ -132,7 +138,7 @@ class ComplianceScorer:
         privilege_result: EvaluationResult,
         grounding_result: EvaluationResult,
         bias_result: EvaluationResult,
-    ) -> List[str]:
+    ) -> list[str]:
         """Build actionable recommendations based on evaluator results.
 
         Args:
@@ -144,7 +150,7 @@ class ComplianceScorer:
         Returns:
             A list of recommendation strings.
         """
-        recommendations: List[str] = []
+        recommendations: list[str] = []
 
         if not pii_result.passed:
             leakage_rate = pii_result.summary.get("pii_leakage_rate", 0.0)
@@ -155,7 +161,8 @@ class ComplianceScorer:
 
         if not privilege_result.passed:
             disclosure_rate = privilege_result.summary.get(
-                "privilege_disclosure_rate", 0.0,
+                "privilege_disclosure_rate",
+                0.0,
             )
             recommendations.append(
                 f"Privilege disclosure rate is {disclosure_rate:.1%}. "
@@ -165,7 +172,8 @@ class ComplianceScorer:
 
         if not grounding_result.passed:
             hallucination_rate = grounding_result.summary.get(
-                "hallucination_rate", 0.0,
+                "hallucination_rate",
+                0.0,
             )
             recommendations.append(
                 f"Hallucination rate is {hallucination_rate:.1%}. "
@@ -182,8 +190,6 @@ class ComplianceScorer:
             )
 
         if not recommendations:
-            recommendations.append(
-                "All compliance metrics are within acceptable thresholds."
-            )
+            recommendations.append("All compliance metrics are within acceptable thresholds.")
 
         return recommendations

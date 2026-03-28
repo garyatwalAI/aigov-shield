@@ -8,7 +8,7 @@ verifying that the text relates to an allowed set of topics.
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 
@@ -16,7 +16,7 @@ from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 # Default blocked-topic keyword lists
 # ---------------------------------------------------------------------------
 
-_DEFAULT_BLOCKED_KEYWORDS: Dict[str, List[str]] = {
+_DEFAULT_BLOCKED_KEYWORDS: dict[str, list[str]] = {
     "medical_advice": [
         "diagnosis",
         "prescription",
@@ -69,21 +69,19 @@ class TopicGuard(BaseGuard):
         self,
         on_violation: GuardAction = GuardAction.BLOCK,
         confidence_threshold: float = 0.5,
-        allowed_topics: Optional[List[str]] = None,
-        blocked_topics: Optional[List[str]] = None,
-        blocked_keywords: Optional[Dict[str, List[str]]] = None,
+        allowed_topics: list[str] | None = None,
+        blocked_topics: list[str] | None = None,
+        blocked_keywords: dict[str, list[str]] | None = None,
     ) -> None:
         super().__init__(
             name="topic_guard",
             on_violation=on_violation,
             confidence_threshold=confidence_threshold,
         )
-        self.allowed_topics: Optional[List[str]] = allowed_topics
-        self.blocked_topics: Optional[List[str]] = blocked_topics
-        self.blocked_keywords: Dict[str, List[str]] = (
-            blocked_keywords
-            if blocked_keywords is not None
-            else dict(_DEFAULT_BLOCKED_KEYWORDS)
+        self.allowed_topics: list[str] | None = allowed_topics
+        self.blocked_topics: list[str] | None = blocked_topics
+        self.blocked_keywords: dict[str, list[str]] = (
+            blocked_keywords if blocked_keywords is not None else dict(_DEFAULT_BLOCKED_KEYWORDS)
         )
 
     # ------------------------------------------------------------------
@@ -93,7 +91,7 @@ class TopicGuard(BaseGuard):
     def check(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> GuardResult:
         """Scan *text* for topical violations and return a ``GuardResult``.
 
@@ -108,16 +106,14 @@ class TopicGuard(BaseGuard):
         start_time = time.perf_counter()
         text_lower = text.lower()
 
-        violations: List[Dict[str, Any]] = []
+        violations: list[dict[str, Any]] = []
         total_hits = 0
 
         # -- Check blocked topics -------------------------------------------
         if self.blocked_topics is not None:
             for topic in self.blocked_topics:
                 keywords = self.blocked_keywords.get(topic, [])
-                matched_keywords: List[str] = [
-                    kw for kw in keywords if kw.lower() in text_lower
-                ]
+                matched_keywords: list[str] = [kw for kw in keywords if kw.lower() in text_lower]
                 if matched_keywords:
                     violations.append(
                         {

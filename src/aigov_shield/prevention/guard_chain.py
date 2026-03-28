@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 
@@ -39,14 +39,14 @@ class ChainResult:
     """
 
     passed: bool
-    results: List[GuardResult] = field(default_factory=list)
-    failed_guards: List[str] = field(default_factory=list)
+    results: list[GuardResult] = field(default_factory=list)
+    failed_guards: list[str] = field(default_factory=list)
     total_execution_time_ms: float = 0.0
     execution_mode: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
-    def modified_text(self) -> Optional[str]:
+    def modified_text(self) -> str | None:
         """Return the final modified text after all redactions.
 
         Returns the last non-None modified_text from the chain, or None
@@ -81,7 +81,7 @@ class GuardChain:
 
     def __init__(
         self,
-        guards: List[BaseGuard],
+        guards: list[BaseGuard],
         execution_mode: ExecutionMode = ExecutionMode.RUN_ALL,
         priority_threshold: int = 0,
     ) -> None:
@@ -92,7 +92,7 @@ class GuardChain:
     def run(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> ChainResult:
         """Run text through all guards in the chain.
 
@@ -107,8 +107,8 @@ class GuardChain:
             ChainResult with individual results and overall pass/fail.
         """
         start_time = time.perf_counter()
-        results: List[GuardResult] = []
-        failed_guards: List[str] = []
+        results: list[GuardResult] = []
+        failed_guards: list[str] = []
         current_text = text
 
         for i, guard in enumerate(self.guards):
@@ -158,7 +158,7 @@ class GuardChain:
     def __call__(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> ChainResult:
         """Allow the chain to be called as a function."""
         return self.run(text, context)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import string
-from typing import Any, Dict, List, Set
+from typing import Any
 
 from aigov_shield.measurement.base import BaseEvaluator, EvaluationResult
 
@@ -22,9 +22,7 @@ class GroundingEvaluator(BaseEvaluator):
             to be considered grounded.
     """
 
-    _SENTENCE_SPLIT_PATTERN: re.Pattern[str] = re.compile(
-        r"(?<=[\.\!\?])\s+|\n+"
-    )
+    _SENTENCE_SPLIT_PATTERN: re.Pattern[str] = re.compile(r"(?<=[\.\!\?])\s+|\n+")
 
     def __init__(
         self,
@@ -34,7 +32,7 @@ class GroundingEvaluator(BaseEvaluator):
         super().__init__(threshold=threshold)
         self.similarity_threshold = similarity_threshold
 
-    def evaluate(self, data: List[Dict[str, str]]) -> EvaluationResult:
+    def evaluate(self, data: list[dict[str, str]]) -> EvaluationResult:
         """Evaluate factual grounding across the provided dataset.
 
         Each item in *data* must contain an ``"output"`` key (the AI-generated
@@ -65,11 +63,11 @@ class GroundingEvaluator(BaseEvaluator):
                 nist_function="MAP",
             )
 
-        details: List[Dict[str, Any]] = []
+        details: list[dict[str, Any]] = []
         total_grounding_score = 0.0
         total_claims = 0
         total_grounded = 0
-        all_ungrounded: List[str] = []
+        all_ungrounded: list[str] = []
 
         for idx, item in enumerate(data):
             output_text = item.get("output", "")
@@ -77,29 +75,30 @@ class GroundingEvaluator(BaseEvaluator):
 
             sentences = self._split_sentences(output_text)
             # Filter to sentences with 5+ words.
-            meaningful_sentences = [
-                s for s in sentences if len(s.split()) >= 5
-            ]
+            meaningful_sentences = [s for s in sentences if len(s.split()) >= 5]
 
             if not meaningful_sentences:
-                details.append({
-                    "item_index": idx,
-                    "grounding_score": 1.0,
-                    "grounded_sentences": 0,
-                    "ungrounded_sentences": 0,
-                    "ungrounded_text": [],
-                })
+                details.append(
+                    {
+                        "item_index": idx,
+                        "grounding_score": 1.0,
+                        "grounded_sentences": 0,
+                        "ungrounded_sentences": 0,
+                        "ungrounded_text": [],
+                    }
+                )
                 total_grounding_score += 1.0
                 continue
 
             context_tokens = self._tokenize(context_text)
             grounded_count = 0
-            ungrounded_text: List[str] = []
+            ungrounded_text: list[str] = []
 
             for sentence in meaningful_sentences:
                 sentence_tokens = self._tokenize(sentence)
                 similarity = self._jaccard_similarity(
-                    sentence_tokens, context_tokens,
+                    sentence_tokens,
+                    context_tokens,
                 )
                 if similarity >= self.similarity_threshold:
                     grounded_count += 1
@@ -114,13 +113,15 @@ class GroundingEvaluator(BaseEvaluator):
             total_grounding_score += item_score
             all_ungrounded.extend(ungrounded_text)
 
-            details.append({
-                "item_index": idx,
-                "grounding_score": item_score,
-                "grounded_sentences": grounded_count,
-                "ungrounded_sentences": ungrounded_count,
-                "ungrounded_text": ungrounded_text,
-            })
+            details.append(
+                {
+                    "item_index": idx,
+                    "grounding_score": item_score,
+                    "grounded_sentences": grounded_count,
+                    "ungrounded_sentences": ungrounded_count,
+                    "ungrounded_text": ungrounded_text,
+                }
+            )
 
         score = total_grounding_score / total_items
         passed = score >= self.threshold
@@ -145,7 +146,7 @@ class GroundingEvaluator(BaseEvaluator):
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _split_sentences(self, text: str) -> List[str]:
+    def _split_sentences(self, text: str) -> list[str]:
         """Split text into sentences using common delimiters.
 
         Args:
@@ -158,7 +159,7 @@ class GroundingEvaluator(BaseEvaluator):
         return [p.strip() for p in parts if p.strip()]
 
     @staticmethod
-    def _tokenize(text: str) -> Set[str]:
+    def _tokenize(text: str) -> set[str]:
         """Tokenize text by lowercasing, splitting on whitespace, and
         stripping punctuation.
 
@@ -173,7 +174,7 @@ class GroundingEvaluator(BaseEvaluator):
         return {w.translate(translator) for w in words if w.translate(translator)}
 
     @staticmethod
-    def _jaccard_similarity(set_a: Set[str], set_b: Set[str]) -> float:
+    def _jaccard_similarity(set_a: set[str], set_b: set[str]) -> float:
         """Compute Jaccard similarity between two token sets.
 
         Args:

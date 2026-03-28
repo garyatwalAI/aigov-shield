@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from aigov_shield.core.types import PIICategory
 from aigov_shield.measurement.base import BaseEvaluator, EvaluationResult
 from aigov_shield.prevention.base import GuardAction
 from aigov_shield.prevention.pii_guard import PIIGuard
+
+if TYPE_CHECKING:
+    from aigov_shield.core.types import PIICategory
 
 
 class PIIEvaluator(BaseEvaluator):
@@ -26,7 +28,7 @@ class PIIEvaluator(BaseEvaluator):
     def __init__(
         self,
         threshold: float = 0.95,
-        categories: Optional[List[PIICategory]] = None,
+        categories: list[PIICategory] | None = None,
     ) -> None:
         super().__init__(threshold=threshold)
         self._guard = PIIGuard(
@@ -35,7 +37,7 @@ class PIIEvaluator(BaseEvaluator):
             categories=categories,
         )
 
-    def evaluate(self, data: List[Dict[str, str]]) -> EvaluationResult:
+    def evaluate(self, data: list[dict[str, str]]) -> EvaluationResult:
         """Evaluate PII leakage across the provided dataset.
 
         Each item in *data* must contain a ``"text"`` key whose value is the
@@ -65,16 +67,16 @@ class PIIEvaluator(BaseEvaluator):
                 nist_function="MEASURE",
             )
 
-        details: List[Dict[str, Any]] = []
+        details: list[dict[str, Any]] = []
         items_with_pii = 0
         pii_count_total = 0
-        pii_by_category: Dict[str, int] = defaultdict(int)
+        pii_by_category: dict[str, int] = defaultdict(int)
 
         for idx, item in enumerate(data):
             text = item.get("text", "")
             result = self._guard.check(text)
             pii_found = not result.passed
-            categories_found: List[str] = []
+            categories_found: list[str] = []
 
             if pii_found:
                 items_with_pii += 1
@@ -84,11 +86,13 @@ class PIIEvaluator(BaseEvaluator):
                     pii_by_category[category] += 1
                     pii_count_total += 1
 
-            details.append({
-                "item_index": idx,
-                "pii_found": pii_found,
-                "categories_found": categories_found,
-            })
+            details.append(
+                {
+                    "item_index": idx,
+                    "pii_found": pii_found,
+                    "categories_found": categories_found,
+                }
+            )
 
         pii_leakage_rate = items_with_pii / total_items
         score = 1.0 - pii_leakage_rate

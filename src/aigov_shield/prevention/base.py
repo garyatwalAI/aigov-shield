@@ -6,11 +6,12 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class GuardAction(Enum):
     """Action to take when a guard detects a violation."""
+
     BLOCK = "block"
     REDACT = "redact"
     FLAG = "flag"
@@ -20,15 +21,16 @@ class GuardAction(Enum):
 @dataclass
 class GuardResult:
     """Result of a guard check."""
+
     passed: bool
     action_taken: GuardAction
     original_text: str
-    modified_text: Optional[str] = None
-    violations: List[Dict[str, Any]] = field(default_factory=list)
+    modified_text: str | None = None
+    violations: list[dict[str, Any]] = field(default_factory=list)
     confidence: float = 0.0
     guard_name: str = ""
     execution_time_ms: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class BaseGuard(ABC):
@@ -54,7 +56,7 @@ class BaseGuard(ABC):
         self.confidence_threshold = confidence_threshold
 
     @abstractmethod
-    def check(self, text: str, context: Optional[Dict[str, Any]] = None) -> GuardResult:
+    def check(self, text: str, context: dict[str, Any] | None = None) -> GuardResult:
         """Check text against the guard's rules.
 
         Args:
@@ -66,7 +68,7 @@ class BaseGuard(ABC):
         """
         ...
 
-    def __call__(self, text: str, context: Optional[Dict[str, Any]] = None) -> GuardResult:
+    def __call__(self, text: str, context: dict[str, Any] | None = None) -> GuardResult:
         """Allow guards to be called as functions."""
         return self.check(text, context)
 
@@ -74,10 +76,10 @@ class BaseGuard(ABC):
         self,
         text: str,
         passed: bool,
-        violations: List[Dict[str, Any]],
+        violations: list[dict[str, Any]],
         confidence: float,
         start_time: float,
-        modified_text: Optional[str] = None,
+        modified_text: str | None = None,
     ) -> GuardResult:
         """Helper to construct a GuardResult with timing info.
 

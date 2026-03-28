@@ -9,17 +9,16 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aigov_shield.core.types import PrivilegeCategory
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
-
 
 # ---------------------------------------------------------------------------
 # Category definitions: keywords and compiled regex patterns
 # ---------------------------------------------------------------------------
 
-_PRIVILEGE_CATEGORIES: List[Dict[str, Any]] = [
+_PRIVILEGE_CATEGORIES: list[dict[str, Any]] = [
     {
         "name": PrivilegeCategory.ATTORNEY_CLIENT,
         "keywords": [
@@ -154,7 +153,7 @@ _PRIVILEGE_CATEGORIES: List[Dict[str, Any]] = [
 # False-positive exclusion patterns
 # ---------------------------------------------------------------------------
 
-_FALSE_POSITIVE_PATTERNS: List[re.Pattern[str]] = [
+_FALSE_POSITIVE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\battorney\s+general\b", re.IGNORECASE),
     re.compile(r"\bdistrict\s+attorney\b", re.IGNORECASE),
     re.compile(
@@ -167,7 +166,7 @@ _FALSE_POSITIVE_PATTERNS: List[re.Pattern[str]] = [
 # Redaction labels per category
 # ---------------------------------------------------------------------------
 
-_REDACTION_LABELS: Dict[PrivilegeCategory, str] = {
+_REDACTION_LABELS: dict[PrivilegeCategory, str] = {
     PrivilegeCategory.ATTORNEY_CLIENT: "[PRIVILEGED \u2014 ATTORNEY-CLIENT]",
     PrivilegeCategory.WORK_PRODUCT: "[PRIVILEGED \u2014 WORK PRODUCT]",
     PrivilegeCategory.SETTLEMENT: "[PRIVILEGED \u2014 SETTLEMENT]",
@@ -194,7 +193,7 @@ class PrivilegeGuard(BaseGuard):
         self,
         on_violation: GuardAction = GuardAction.BLOCK,
         confidence_threshold: float = 0.5,
-        categories: Optional[List[PrivilegeCategory]] = None,
+        categories: list[PrivilegeCategory] | None = None,
     ) -> None:
         super().__init__(
             name="PrivilegeGuard",
@@ -217,7 +216,7 @@ class PrivilegeGuard(BaseGuard):
     def check(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> GuardResult:
         """Scan *text* for legal-privilege markers.
 
@@ -233,13 +232,13 @@ class PrivilegeGuard(BaseGuard):
         text_lower = text.lower()
 
         # Detect false-positive phrases present in the text.
-        false_positive_spans: List[tuple[int, int]] = []
+        false_positive_spans: list[tuple[int, int]] = []
         for fp_pattern in _FALSE_POSITIVE_PATTERNS:
             for m in fp_pattern.finditer(text):
                 false_positive_spans.append((m.start(), m.end()))
 
-        violations: List[Dict[str, Any]] = []
-        category_scores: Dict[PrivilegeCategory, float] = {}
+        violations: list[dict[str, Any]] = []
+        category_scores: dict[PrivilegeCategory, float] = {}
         categories_with_patterns: set[PrivilegeCategory] = set()
 
         for cat_def in _PRIVILEGE_CATEGORIES:
@@ -247,11 +246,11 @@ class PrivilegeGuard(BaseGuard):
             if cat_name not in self._enabled_categories:
                 continue
 
-            keywords: List[str] = cat_def["keywords"]
-            patterns: List[re.Pattern[str]] = cat_def["patterns"]
+            keywords: list[str] = cat_def["keywords"]
+            patterns: list[re.Pattern[str]] = cat_def["patterns"]
 
             # --- keyword matching ---
-            keyword_hits: List[str] = []
+            keyword_hits: list[str] = []
             for kw in keywords:
                 if kw.lower() in text_lower:
                     # Check whether this keyword match overlaps entirely
@@ -272,14 +271,12 @@ class PrivilegeGuard(BaseGuard):
                     )
 
             # --- pattern matching ---
-            pattern_hits: List[Dict[str, Any]] = []
+            pattern_hits: list[dict[str, Any]] = []
             for pat in patterns:
                 for m in pat.finditer(text):
-                    if self._is_false_positive_only(
-                        m.start(), m.end(), false_positive_spans
-                    ):
+                    if self._is_false_positive_only(m.start(), m.end(), false_positive_spans):
                         continue
-                    hit: Dict[str, Any] = {
+                    hit: dict[str, Any] = {
                         "category": cat_name.value,
                         "matched_text": m.group(),
                         "match_type": "pattern",
@@ -300,13 +297,11 @@ class PrivilegeGuard(BaseGuard):
                 category_scores[cat_name] = score
 
         # --- overall confidence ---
-        confidence = self._compute_overall_confidence(
-            category_scores, categories_with_patterns
-        )
+        confidence = self._compute_overall_confidence(category_scores, categories_with_patterns)
 
         if confidence >= self.confidence_threshold and violations:
             passed = False
-            modified_text: Optional[str] = None
+            modified_text: str | None = None
             if self.on_violation == GuardAction.REDACT:
                 modified_text = self._redact_text(text, violations)
         else:
@@ -360,7 +355,7 @@ class PrivilegeGuard(BaseGuard):
 
     @staticmethod
     def _compute_overall_confidence(
-        category_scores: Dict[PrivilegeCategory, float],
+        category_scores: dict[PrivilegeCategory, float],
         categories_with_patterns: set[PrivilegeCategory],
     ) -> float:
         """Compute the aggregate confidence across all categories.
@@ -397,7 +392,7 @@ class PrivilegeGuard(BaseGuard):
     def _is_false_positive_only(
         start: int,
         end: int,
-        fp_spans: List[tuple[int, int]],
+        fp_spans: list[tuple[int, int]],
     ) -> bool:
         """Return ``True`` if the span is fully covered by false-positive spans.
 
@@ -410,10 +405,7 @@ class PrivilegeGuard(BaseGuard):
             ``True`` when the candidate is entirely within a
             false-positive span.
         """
-        for fp_start, fp_end in fp_spans:
-            if fp_start <= start and end <= fp_end:
-                return True
-        return False
+        return any(fp_start <= start and end <= fp_end for fp_start, fp_end in fp_spans)
 
     # ------------------------------------------------------------------
     # Redaction
@@ -422,7 +414,7 @@ class PrivilegeGuard(BaseGuard):
     def _redact_text(
         self,
         text: str,
-        violations: List[Dict[str, Any]],
+        violations: list[dict[str, Any]],
     ) -> str:
         """Produce a redacted copy of *text*.
 
@@ -445,8 +437,8 @@ class PrivilegeGuard(BaseGuard):
 
         # Separate violations into positioned (pattern) and un-positioned
         # (keyword-only).
-        positioned: List[Dict[str, Any]] = []
-        keyword_only: List[Dict[str, Any]] = []
+        positioned: list[dict[str, Any]] = []
+        keyword_only: list[dict[str, Any]] = []
 
         for v in violations:
             if "position" in v and v["position"] is not None:
@@ -456,7 +448,7 @@ class PrivilegeGuard(BaseGuard):
 
         # --- Handle positioned violations (descending order) ---
         positioned.sort(key=lambda v: v["position"]["start"], reverse=True)
-        replaced_spans: List[tuple[int, int]] = []
+        replaced_spans: list[tuple[int, int]] = []
 
         for v in positioned:
             cat = PrivilegeCategory(v["category"])
@@ -465,9 +457,7 @@ class PrivilegeGuard(BaseGuard):
             end: int = v["position"]["end"]
 
             # Skip if this span overlaps with one already replaced.
-            if any(
-                s <= start < e or s < end <= e for s, e in replaced_spans
-            ):
+            if any(s <= start < e or s < end <= e for s, e in replaced_spans):
                 continue
 
             result = result[:start] + label + result[end:]
@@ -486,7 +476,7 @@ class PrivilegeGuard(BaseGuard):
         return result
 
     @staticmethod
-    def _find_sentence(text: str, keyword: str) -> Optional[str]:
+    def _find_sentence(text: str, keyword: str) -> str | None:
         """Locate the sentence in *text* that contains *keyword*.
 
         A sentence is delimited by ``[.!?]`` followed by whitespace, or

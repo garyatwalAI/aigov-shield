@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 
@@ -18,7 +18,7 @@ from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
 # Compiled injection patterns: (category, pattern, severity)
 # ---------------------------------------------------------------------------
 
-_INJECTION_PATTERNS: List[Tuple[str, re.Pattern[str], float]] = [
+_INJECTION_PATTERNS: list[tuple[str, re.Pattern[str], float]] = [
     # -- instruction_override (severity 0.9) ---------------------------------
     (
         "instruction_override",
@@ -175,16 +175,14 @@ class PromptInjectionGuard(BaseGuard):
         self,
         on_violation: GuardAction = GuardAction.BLOCK,
         confidence_threshold: float = 0.5,
-        custom_patterns: Optional[List[Tuple[str, str, float]]] = None,
+        custom_patterns: list[tuple[str, str, float]] | None = None,
     ) -> None:
         super().__init__(
             name="prompt_injection_guard",
             on_violation=on_violation,
             confidence_threshold=confidence_threshold,
         )
-        self._patterns: List[Tuple[str, re.Pattern[str], float]] = list(
-            _INJECTION_PATTERNS
-        )
+        self._patterns: list[tuple[str, re.Pattern[str], float]] = list(_INJECTION_PATTERNS)
         if custom_patterns:
             for category, pattern_str, severity in custom_patterns:
                 compiled = re.compile(pattern_str, re.IGNORECASE)
@@ -197,7 +195,7 @@ class PromptInjectionGuard(BaseGuard):
     def check(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> GuardResult:
         """Scan *text* for prompt injection attempts and return a ``GuardResult``.
 
@@ -211,7 +209,7 @@ class PromptInjectionGuard(BaseGuard):
         """
         start_time = time.perf_counter()
 
-        violations: List[Dict[str, Any]] = []
+        violations: list[dict[str, Any]] = []
         max_severity = 0.0
 
         for category, pattern, severity in self._patterns:

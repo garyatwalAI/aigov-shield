@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 
 class GovernanceLayer(str, enum.Enum):
@@ -108,4 +108,4 @@ class InteractionRecord:
     interaction_type: str
     actor: str
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)

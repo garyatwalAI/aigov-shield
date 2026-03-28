@@ -9,10 +9,8 @@ import io
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import uuid4
-
-from aigov_shield.core.exceptions import ChainIntegrityError
 
 
 @dataclass
@@ -41,11 +39,11 @@ class CustodyRecord:
     content_hash: str
     previous_record_hash: str
     actor: str
-    model_id: Optional[str] = None
-    input_hash: Optional[str] = None
-    documents_referenced: List[str] = field(default_factory=list)
-    guard_results: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    model_id: str | None = None
+    input_hash: str | None = None
+    documents_referenced: list[str] = field(default_factory=list)
+    guard_results: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     record_hash: str = ""
 
     def compute_hash(self) -> str:
@@ -54,7 +52,7 @@ class CustodyRecord:
         Returns:
             Hex digest of the computed hash.
         """
-        hash_data: Dict[str, Any] = {
+        hash_data: dict[str, Any] = {
             "record_id": self.record_id,
             "timestamp": self.timestamp,
             "interaction_type": self.interaction_type,
@@ -70,7 +68,7 @@ class CustodyRecord:
         serialized = json.dumps(hash_data, sort_keys=True)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the record to a plain dictionary.
 
         Returns:
@@ -88,7 +86,7 @@ class ChainOfCustody:
     """
 
     def __init__(self, storage_backend: str = "memory") -> None:
-        self._chain: List[CustodyRecord] = []
+        self._chain: list[CustodyRecord] = []
         self.storage_backend = storage_backend
 
     def add_record(
@@ -96,11 +94,11 @@ class ChainOfCustody:
         interaction_type: str,
         content: str,
         actor: str,
-        model_id: Optional[str] = None,
-        input_hash: Optional[str] = None,
-        documents_referenced: Optional[List[str]] = None,
-        guard_results: Optional[List[Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        model_id: str | None = None,
+        input_hash: str | None = None,
+        documents_referenced: list[str] | None = None,
+        guard_results: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> CustodyRecord:
         """Add a new record to the chain.
 
@@ -118,9 +116,7 @@ class ChainOfCustody:
         Returns:
             The newly created custody record.
         """
-        previous_record_hash = (
-            self._chain[-1].record_hash if self._chain else "GENESIS"
-        )
+        previous_record_hash = self._chain[-1].record_hash if self._chain else "GENESIS"
         content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         record = CustodyRecord(
@@ -140,7 +136,7 @@ class ChainOfCustody:
         self._chain.append(record)
         return record
 
-    def verify_chain(self) -> Tuple[bool, List[str]]:
+    def verify_chain(self) -> tuple[bool, list[str]]:
         """Verify the integrity of the entire chain.
 
         Returns:
@@ -148,7 +144,7 @@ class ChainOfCustody:
             chain is intact and *errors* is a list of human-readable error
             descriptions.
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         for idx, record in enumerate(self._chain):
             # Verify record hash matches recomputed hash.
@@ -179,7 +175,7 @@ class ChainOfCustody:
 
         return (len(errors) == 0, errors)
 
-    def get_record(self, record_id: str) -> Optional[CustodyRecord]:
+    def get_record(self, record_id: str) -> CustodyRecord | None:
         """Retrieve a record by its ID.
 
         Args:
@@ -193,7 +189,7 @@ class ChainOfCustody:
                 return record
         return None
 
-    def get_chain(self) -> List[CustodyRecord]:
+    def get_chain(self) -> list[CustodyRecord]:
         """Return a copy of the full chain.
 
         Returns:
@@ -204,15 +200,17 @@ class ChainOfCustody:
     def __len__(self) -> int:
         return len(self._chain)
 
+    def __bool__(self) -> bool:
+        """Always return True so the object is truthy even when empty."""
+        return True
+
     def export_json(self) -> str:
         """Export all records as a pretty-printed JSON array.
 
         Returns:
             JSON string.
         """
-        return json.dumps(
-            [record.to_dict() for record in self._chain], indent=2
-        )
+        return json.dumps([record.to_dict() for record in self._chain], indent=2)
 
     def export_jsonl(self) -> str:
         """Export all records as JSON Lines (one JSON object per line).
@@ -238,7 +236,7 @@ class ChainOfCustody:
         writer.writeheader()
         for record in records:
             # Serialize complex values to JSON strings for CSV.
-            row: Dict[str, Any] = {}
+            row: dict[str, Any] = {}
             for key, value in record.items():
                 if isinstance(value, (list, dict)):
                     row[key] = json.dumps(value)

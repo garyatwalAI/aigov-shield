@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-
 from aigov_shield.prevention import (
     ExecutionMode,
     GuardAction,
     GuardChain,
     PIIGuard,
     PrivilegeGuard,
-    PromptInjectionGuard,
     ToxicityGuard,
 )
 

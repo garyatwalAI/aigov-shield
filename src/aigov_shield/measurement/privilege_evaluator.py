@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from aigov_shield.core.types import PrivilegeCategory
 from aigov_shield.measurement.base import BaseEvaluator, EvaluationResult
 from aigov_shield.prevention.base import GuardAction
 from aigov_shield.prevention.privilege_guard import PrivilegeGuard
+
+if TYPE_CHECKING:
+    from aigov_shield.core.types import PrivilegeCategory
 
 
 class PrivilegeEvaluator(BaseEvaluator):
@@ -26,7 +28,7 @@ class PrivilegeEvaluator(BaseEvaluator):
     def __init__(
         self,
         threshold: float = 0.95,
-        categories: Optional[List[PrivilegeCategory]] = None,
+        categories: list[PrivilegeCategory] | None = None,
     ) -> None:
         super().__init__(threshold=threshold)
         self._guard = PrivilegeGuard(
@@ -35,7 +37,7 @@ class PrivilegeEvaluator(BaseEvaluator):
             categories=categories,
         )
 
-    def evaluate(self, data: List[Dict[str, str]]) -> EvaluationResult:
+    def evaluate(self, data: list[dict[str, str]]) -> EvaluationResult:
         """Evaluate privilege disclosure across the provided dataset.
 
         Each item in *data* must contain a ``"text"`` key whose value is the
@@ -66,16 +68,16 @@ class PrivilegeEvaluator(BaseEvaluator):
                 nist_function="MANAGE",
             )
 
-        details: List[Dict[str, Any]] = []
+        details: list[dict[str, Any]] = []
         items_with_privilege = 0
-        privilege_by_category: Dict[str, int] = defaultdict(int)
+        privilege_by_category: dict[str, int] = defaultdict(int)
         total_confidence = 0.0
 
         for idx, item in enumerate(data):
             text = item.get("text", "")
             result = self._guard.check(text)
             privilege_found = not result.passed
-            categories_found: List[str] = []
+            categories_found: list[str] = []
 
             if privilege_found:
                 items_with_privilege += 1
@@ -85,20 +87,20 @@ class PrivilegeEvaluator(BaseEvaluator):
                     categories_found.append(category)
                     privilege_by_category[category] += 1
 
-            details.append({
-                "item_index": idx,
-                "privilege_found": privilege_found,
-                "categories_found": categories_found,
-                "confidence": result.confidence,
-            })
+            details.append(
+                {
+                    "item_index": idx,
+                    "privilege_found": privilege_found,
+                    "categories_found": categories_found,
+                    "confidence": result.confidence,
+                }
+            )
 
         privilege_disclosure_rate = items_with_privilege / total_items
         score = 1.0 - privilege_disclosure_rate
         passed = score >= self.threshold
         average_confidence = (
-            total_confidence / items_with_privilege
-            if items_with_privilege > 0
-            else 0.0
+            total_confidence / items_with_privilege if items_with_privilege > 0 else 0.0
         )
 
         return EvaluationResult(

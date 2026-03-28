@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -20,7 +19,7 @@ class DecisionStep:
 
     step_name: str
     timestamp: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -38,9 +37,9 @@ class DecisionTrail:
 
     decision_id: str
     started_at: str
-    completed_at: Optional[str] = None
-    steps: List[DecisionStep] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    completed_at: str | None = None
+    steps: list[DecisionStep] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DecisionContext:
@@ -80,9 +79,9 @@ class DecisionContext:
 
     def __exit__(
         self,
-        exc_type: Optional[type],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> None:
         trail = self._recorder._decisions.get(self._decision_id)
         if trail is not None:
@@ -93,7 +92,7 @@ class DecisionRecorder:
     """Records decision trails for explainability and auditing."""
 
     def __init__(self) -> None:
-        self._decisions: Dict[str, DecisionTrail] = {}
+        self._decisions: dict[str, DecisionTrail] = {}
 
     def record_decision(self, decision_id: str) -> DecisionContext:
         """Create a context manager for recording a decision trail.
@@ -111,9 +110,7 @@ class DecisionRecorder:
         self._decisions[decision_id] = trail
         return DecisionContext(decision_id=decision_id, recorder=self)
 
-    def export_decision(
-        self, decision_id: str
-    ) -> Optional[Dict[str, Any]]:
+    def export_decision(self, decision_id: str) -> dict[str, Any] | None:
         """Export a single decision trail as a dictionary.
 
         Args:
@@ -141,7 +138,7 @@ class DecisionRecorder:
             "metadata": trail.metadata,
         }
 
-    def list_decisions(self) -> List[str]:
+    def list_decisions(self) -> list[str]:
         """List all recorded decision IDs.
 
         Returns:

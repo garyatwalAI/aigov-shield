@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -26,11 +26,11 @@ class GovernanceConfig:
     enable_logging: bool = True
     log_level: str = "INFO"
     storage_backend: str = "memory"
-    storage_path: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    storage_path: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> GovernanceConfig:
+    def from_dict(cls, data: dict[str, Any]) -> GovernanceConfig:
         """Create a GovernanceConfig from a dictionary.
 
         Args:
@@ -56,9 +56,9 @@ class GovernanceConfig:
             A new GovernanceConfig populated from the environment.
         """
         prefix = "AIGOV_SHIELD_"
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
 
-        env_mapping: Dict[str, type] = {
+        env_mapping: dict[str, type] = {
             "DEFAULT_ACTION": str,
             "CONFIDENCE_THRESHOLD": float,
             "ENABLE_LOGGING": bool,
@@ -81,7 +81,7 @@ class GovernanceConfig:
 
         return cls(**data)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize this configuration to a plain dictionary.
 
         Returns:

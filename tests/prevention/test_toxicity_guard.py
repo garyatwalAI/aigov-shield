@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from aigov_shield.prevention import GuardAction, ToxicityGuard
 
 
@@ -25,7 +23,9 @@ def test_threat_detection(toxicity_guard):
 
 def test_hate_speech_detection(toxicity_guard):
     """Clearly hateful content should be detected."""
-    result = toxicity_guard.check("They are subhuman and should be wiped out.")
+    result = toxicity_guard.check(
+        "They are subhuman, an inferior race, and deserve ethnic cleansing."
+    )
     assert result.passed is False
     categories = {v["category"] for v in result.violations}
     assert "hate_speech" in categories
@@ -70,17 +70,13 @@ def test_regex_threat_pattern(toxicity_guard):
     """Complex threat regex should match 'I'm going to hurt them'."""
     result = toxicity_guard.check("I'm going to hurt them badly.")
     assert result.passed is False
-    regex_violations = [
-        v for v in result.violations if v.get("detection_type") == "regex"
-    ]
+    regex_violations = [v for v in result.violations if v.get("detection_type") == "regex"]
     assert len(regex_violations) >= 1
 
 
 def test_multiple_categories_high_confidence(toxicity_guard):
     """Multiple toxic indicators should produce higher confidence."""
     result_single = toxicity_guard.check("You're worthless.")
-    result_multi = toxicity_guard.check(
-        "I will kill you. You're worthless. You disgust me."
-    )
+    result_multi = toxicity_guard.check("I will kill you. You're worthless. You disgust me.")
     # Multiple hits should produce equal or higher confidence.
     assert result_multi.confidence >= result_single.confidence

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aigov_shield.accountability.export import (
     export_to_csv,
@@ -30,7 +29,7 @@ class TrackedDocument:
     path: str
     content_hash: str
     registered_at: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -46,10 +45,10 @@ class ChunkReference:
     """
 
     doc_id: str
-    page: Optional[int] = None
-    start_char: Optional[int] = None
-    end_char: Optional[int] = None
-    chunk_text: Optional[str] = None
+    page: int | None = None
+    start_char: int | None = None
+    end_char: int | None = None
+    chunk_text: str | None = None
 
 
 @dataclass
@@ -66,24 +65,24 @@ class UsageRecord:
 
     output_id: str
     timestamp: str
-    documents_used: List[str]
-    chunks_used: List[ChunkReference]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    documents_used: list[str]
+    chunks_used: list[ChunkReference]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DocumentTracker:
     """Tracks document registration and usage for provenance auditing."""
 
     def __init__(self) -> None:
-        self._documents: Dict[str, TrackedDocument] = {}
-        self._usage_records: Dict[str, UsageRecord] = {}
+        self._documents: dict[str, TrackedDocument] = {}
+        self._usage_records: dict[str, UsageRecord] = {}
 
     def register_document(
         self,
         doc_id: str,
         path: str,
         content_hash: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> TrackedDocument:
         """Register a document for tracking.
 
@@ -106,7 +105,7 @@ class DocumentTracker:
         self._documents[doc_id] = doc
         return doc
 
-    def get_document(self, doc_id: str) -> Optional[TrackedDocument]:
+    def get_document(self, doc_id: str) -> TrackedDocument | None:
         """Retrieve a tracked document by its ID.
 
         Args:
@@ -120,9 +119,9 @@ class DocumentTracker:
     def record_usage(
         self,
         output_id: str,
-        documents_used: List[str],
-        chunks_used: Optional[List[Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        documents_used: list[str],
+        chunks_used: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> UsageRecord:
         """Record that an output used specific documents and chunks.
 
@@ -136,7 +135,7 @@ class DocumentTracker:
         Returns:
             The newly created usage record.
         """
-        chunk_refs: List[ChunkReference] = []
+        chunk_refs: list[ChunkReference] = []
         if chunks_used:
             for chunk in chunks_used:
                 chunk_refs.append(
@@ -159,7 +158,7 @@ class DocumentTracker:
         self._usage_records[output_id] = usage
         return usage
 
-    def get_provenance(self, output_id: str) -> Optional[Dict[str, Any]]:
+    def get_provenance(self, output_id: str) -> dict[str, Any] | None:
         """Get the full provenance chain for an output.
 
         Traces from the output back through chunks to source documents and
@@ -176,21 +175,23 @@ class DocumentTracker:
         if usage is None:
             return None
 
-        documents: List[Dict[str, Any]] = []
+        documents: list[dict[str, Any]] = []
         for doc_id in usage.documents_used:
             doc = self._documents.get(doc_id)
             if doc:
-                documents.append({
-                    "doc_id": doc.doc_id,
-                    "path": doc.path,
-                    "content_hash": doc.content_hash,
-                    "registered_at": doc.registered_at,
-                    "metadata": doc.metadata,
-                })
+                documents.append(
+                    {
+                        "doc_id": doc.doc_id,
+                        "path": doc.path,
+                        "content_hash": doc.content_hash,
+                        "registered_at": doc.registered_at,
+                        "metadata": doc.metadata,
+                    }
+                )
 
-        chunks: List[Dict[str, Any]] = []
+        chunks: list[dict[str, Any]] = []
         for chunk in usage.chunks_used:
-            chunk_info: Dict[str, Any] = {"doc_id": chunk.doc_id}
+            chunk_info: dict[str, Any] = {"doc_id": chunk.doc_id}
             if chunk.page is not None:
                 chunk_info["page"] = chunk.page
             if chunk.start_char is not None:
@@ -209,7 +210,7 @@ class DocumentTracker:
             "metadata": usage.metadata,
         }
 
-    def get_document_usage(self, doc_id: str) -> List[str]:
+    def get_document_usage(self, doc_id: str) -> list[str]:
         """Get all output IDs that used a specific document.
 
         Args:
@@ -218,7 +219,7 @@ class DocumentTracker:
         Returns:
             List of output identifiers that referenced this document.
         """
-        output_ids: List[str] = []
+        output_ids: list[str] = []
         for output_id, usage in self._usage_records.items():
             if doc_id in usage.documents_used:
                 output_ids.append(output_id)
@@ -236,22 +237,24 @@ class DocumentTracker:
         Raises:
             ValueError: If the format is not supported.
         """
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
 
         for doc in self._documents.values():
-            records.append({
-                "type": "document",
-                "doc_id": doc.doc_id,
-                "path": doc.path,
-                "content_hash": doc.content_hash,
-                "registered_at": doc.registered_at,
-                "metadata": doc.metadata,
-            })
+            records.append(
+                {
+                    "type": "document",
+                    "doc_id": doc.doc_id,
+                    "path": doc.path,
+                    "content_hash": doc.content_hash,
+                    "registered_at": doc.registered_at,
+                    "metadata": doc.metadata,
+                }
+            )
 
         for usage in self._usage_records.values():
-            chunks_serialized: List[Dict[str, Any]] = []
+            chunks_serialized: list[dict[str, Any]] = []
             for chunk in usage.chunks_used:
-                chunk_dict: Dict[str, Any] = {"doc_id": chunk.doc_id}
+                chunk_dict: dict[str, Any] = {"doc_id": chunk.doc_id}
                 if chunk.page is not None:
                     chunk_dict["page"] = chunk.page
                 if chunk.start_char is not None:
@@ -262,14 +265,16 @@ class DocumentTracker:
                     chunk_dict["chunk_text"] = chunk.chunk_text
                 chunks_serialized.append(chunk_dict)
 
-            records.append({
-                "type": "usage",
-                "output_id": usage.output_id,
-                "timestamp": usage.timestamp,
-                "documents_used": usage.documents_used,
-                "chunks_used": chunks_serialized,
-                "metadata": usage.metadata,
-            })
+            records.append(
+                {
+                    "type": "usage",
+                    "output_id": usage.output_id,
+                    "timestamp": usage.timestamp,
+                    "documents_used": usage.documents_used,
+                    "chunks_used": chunks_serialized,
+                    "metadata": usage.metadata,
+                }
+            )
 
         if format == "json":
             return export_to_json(records)

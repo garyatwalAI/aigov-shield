@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aigov_shield.core.types import PIICategory, RedactionMode
 from aigov_shield.prevention.base import BaseGuard, GuardAction, GuardResult
@@ -82,7 +82,7 @@ _IBAN_PATTERN: re.Pattern[str] = re.compile(
     r"\b[A-Z]{2}\d{2}\s?[A-Z0-9]{4}\s?(?:[A-Z0-9]{4}\s?){1,7}[A-Z0-9]{1,4}\b"
 )
 
-_PII_PATTERNS: Dict[PIICategory, List[re.Pattern[str]]] = {
+_PII_PATTERNS: dict[PIICategory, list[re.Pattern[str]]] = {
     PIICategory.EMAIL: [_EMAIL_PATTERN],
     PIICategory.PHONE: [_PHONE_PATTERN],
     PIICategory.SSN: [_SSN_PATTERN],
@@ -96,7 +96,7 @@ _PII_PATTERNS: Dict[PIICategory, List[re.Pattern[str]]] = {
 }
 
 # Map each category to the placeholder tag used during MASK redaction.
-_CATEGORY_TAGS: Dict[PIICategory, str] = {
+_CATEGORY_TAGS: dict[PIICategory, str] = {
     PIICategory.EMAIL: "[EMAIL]",
     PIICategory.PHONE: "[PHONE]",
     PIICategory.SSN: "[SSN]",
@@ -131,7 +131,7 @@ class PIIGuard(BaseGuard):
         self,
         on_violation: GuardAction = GuardAction.REDACT,
         confidence_threshold: float = 0.5,
-        categories: Optional[List[PIICategory]] = None,
+        categories: list[PIICategory] | None = None,
         redaction_mode: RedactionMode = RedactionMode.MASK,
     ) -> None:
         super().__init__(
@@ -140,7 +140,7 @@ class PIIGuard(BaseGuard):
             confidence_threshold=confidence_threshold,
         )
         self.redaction_mode = redaction_mode
-        self.categories: List[PIICategory] = (
+        self.categories: list[PIICategory] = (
             categories if categories is not None else list(PIICategory)
         )
 
@@ -151,7 +151,7 @@ class PIIGuard(BaseGuard):
     def check(
         self,
         text: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> GuardResult:
         """Scan *text* for PII and return a ``GuardResult``.
 
@@ -165,7 +165,7 @@ class PIIGuard(BaseGuard):
             output.
         """
         start_time = time.perf_counter()
-        violations: List[Dict[str, Any]] = []
+        violations: list[dict[str, Any]] = []
 
         for category in self.categories:
             patterns = _PII_PATTERNS.get(category, [])
@@ -209,7 +209,7 @@ class PIIGuard(BaseGuard):
             confidence = 0.9
 
         passed = True
-        modified_text: Optional[str] = None
+        modified_text: str | None = None
 
         if violations and confidence >= self.confidence_threshold:
             passed = False
@@ -232,7 +232,7 @@ class PIIGuard(BaseGuard):
     def _redact_text(
         self,
         text: str,
-        violations: List[Dict[str, Any]],
+        violations: list[dict[str, Any]],
     ) -> str:
         """Apply redaction to *text* based on *self.redaction_mode*.
 
@@ -248,9 +248,7 @@ class PIIGuard(BaseGuard):
             The text with PII replaced according to the active redaction
             mode.
         """
-        sorted_violations = sorted(
-            violations, key=lambda v: v["start"], reverse=True
-        )
+        sorted_violations = sorted(violations, key=lambda v: v["start"], reverse=True)
 
         for violation in sorted_violations:
             start: int = violation["start"]

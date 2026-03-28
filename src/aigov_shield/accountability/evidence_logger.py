@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
 from aigov_shield.accountability.chain_of_custody import ChainOfCustody
@@ -24,16 +24,16 @@ class EvidenceLogger:
 
     def __init__(self, case_id: str, storage: str = "memory") -> None:
         self.case_id = case_id
-        self.records: List[Dict[str, Any]] = []
+        self.records: list[dict[str, Any]] = []
         self._chain = ChainOfCustody(storage_backend=storage)
 
     def log_retrieval(
         self,
         query: str,
-        documents_retrieved: List[str],
+        documents_retrieved: list[str],
         retrieval_method: str = "unknown",
-        relevance_scores: Optional[List[float]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        relevance_scores: list[float] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Log a document retrieval event.
 
@@ -48,13 +48,13 @@ class EvidenceLogger:
             The record ID of the newly created record.
         """
         record_id = str(uuid4())
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "query": query,
             "documents_retrieved": documents_retrieved,
             "retrieval_method": retrieval_method,
             "relevance_scores": relevance_scores,
         }
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "record_id": record_id,
             "case_id": self.case_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -79,10 +79,10 @@ class EvidenceLogger:
         prompt: str,
         response: str,
         model: str = "unknown",
-        documents_used: Optional[List[str]] = None,
-        guard_results: Optional[List[Dict[str, Any]]] = None,
-        confidence: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        documents_used: list[str] | None = None,
+        guard_results: list[dict[str, Any]] | None = None,
+        confidence: float | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Log a generation event.
 
@@ -99,7 +99,7 @@ class EvidenceLogger:
             The record ID of the newly created record.
         """
         record_id = str(uuid4())
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "prompt": prompt,
             "response": response,
             "model": model,
@@ -107,7 +107,7 @@ class EvidenceLogger:
             "guard_results": guard_results or [],
             "confidence": confidence,
         }
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "record_id": record_id,
             "case_id": self.case_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -133,7 +133,7 @@ class EvidenceLogger:
         self,
         event_type: str,
         description: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Log a generic event.
 
@@ -146,10 +146,10 @@ class EvidenceLogger:
             The record ID of the newly created record.
         """
         record_id = str(uuid4())
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "description": description,
         }
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "record_id": record_id,
             "case_id": self.case_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -168,7 +168,7 @@ class EvidenceLogger:
         )
         return record_id
 
-    def get_record(self, record_id: str) -> Optional[Dict[str, Any]]:
+    def get_record(self, record_id: str) -> dict[str, Any] | None:
         """Retrieve a record by its ID.
 
         Args:
@@ -182,9 +182,7 @@ class EvidenceLogger:
                 return record
         return None
 
-    def get_records(
-        self, event_type: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def get_records(self, event_type: str | None = None) -> list[dict[str, Any]]:
         """Retrieve records, optionally filtered by event type.
 
         Args:
@@ -205,7 +203,7 @@ class EvidenceLogger:
         """
         return self._chain
 
-    def verify_integrity(self) -> Tuple[bool, List[str]]:
+    def verify_integrity(self) -> tuple[bool, list[str]]:
         """Verify the integrity of the evidence chain.
 
         Returns:
